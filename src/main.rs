@@ -1,5 +1,5 @@
 //! Build: rustc --edition=2021 -O main.rs -o snowflakeAlgorithm
-//! Run in a scratch directory: the notebook creates/overwrites ./dataset.txt.
+//! Creates ./dataset.txt on first run and reuses it on subsequent runs.
 
 use std::collections::HashMap;
 use std::fs::File;
@@ -277,7 +277,9 @@ fn main() -> io::Result<()> {
     // ## Let's Create a dataset
     // Also let's make a function for loading the data from the file
     println!("LinuxUser Programming Exercise No 14");
-    create_dataset()?;
+    if !std::path::Path::new("dataset.txt").try_exists()? {
+        create_dataset()?;
+    }
     let snowflakes = read_dataset()?;
     let snowflakes_ref = &snowflakes;
     // ## Solution
