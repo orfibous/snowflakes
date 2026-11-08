@@ -1,7 +1,7 @@
 //! Build: rustc --edition=2021 -O main.rs -o snowflakeAlgorithm
 //! Creates ./dataset.txt on first run and reuses it on subsequent runs.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::io::{self, BufRead, BufReader, BufWriter, Read, Write};
 use std::time::{Duration, Instant};
@@ -9,7 +9,7 @@ use std::time::{Duration, Instant};
 type Snowflake = [u32; 6];
 type Comparator = fn(&Snowflake, &Snowflake) -> bool;
 const NUMBER_OF_SNOWFLAKES: usize = 100000;
-const MAX_SNOWFLAKE_LENGTH: u64 = 255;
+const MAX_SNOWFLAKE_LENGTH: u64 = 9999999;
 const NUMBER_OF_SNOWFLAKE_BRANCHES: usize = 6;
 
 fn duration(d: Duration) -> String {
@@ -261,6 +261,33 @@ fn sum_product_hashmap_find_duplicate_snowflakes(
     hashmap_search(snowflakes, comparator, tick, true)
 }
 
+fn canonical_form(snowflake: &Snowflake) -> Snowflake {
+    let mut canonical = *snowflake;
+    for start in 0..6 {
+        let clockwise = std::array::from_fn(|offset| snowflake[(start + offset) % 6]);
+        let counterclockwise =
+            std::array::from_fn(|offset| snowflake[(start + 6 - offset) % 6]);
+        canonical = canonical.min(clockwise).min(counterclockwise);
+    }
+    canonical
+}
+
+fn canonical_find_duplicate_snowflakes(snowflakes: &[Snowflake], tick: Instant) -> bool {
+    let mut seen = HashSet::new();
+    let mut checks = 0;
+    let mut found = false;
+    for snowflake in snowflakes {
+        checks += 1;
+        if !seen.insert(canonical_form(snowflake)) {
+            found = true;
+            break;
+        }
+    }
+    println!("{} HashSet insertion checks in {}", checks, duration(tick.elapsed()));
+    report(found);
+    found
+}
+
 fn main() -> io::Result<()> {
     // # CCO '07 P2 - Snowflakes
     // -----
@@ -358,5 +385,15 @@ fn main() -> io::Result<()> {
     let tick = Instant::now();
     sum_product_hashmap_find_duplicate_snowflakes(snowflakes_ref, advanced_comparator, tick);
     println!("Sum + Product Hashmap (Advanced Comparator) Solution finished in {}", duration(tick.elapsed()));
+    // ## Canonical Form + HashSet
+    //
+    // Each snowflake has six rotations in each direction. Its canonical form is the lexicographically smallest of these twelve arrays: compare the first arms, then the next arms to break ties. This preserves the circular order. Rotated or reflected twins therefore have exactly the same canonical form.
+    //
+    // We insert each canonical form into a HashSet, since it is simpler that a HashMap. A repeated form proves that twins exist, so no additional comparator is needed. Each insertion also checks whether the form is already present.
+    // We report how many such checks were performed before stopping, with elapsed time from `tick`. With six arms, expected time is O(n) and space is O(n).
+    println!("Canonical Form + HashSet Solution: Detect duplicate canonical forms");
+    let tick = Instant::now();
+    canonical_find_duplicate_snowflakes(snowflakes_ref, tick);
+    println!("Canonical Form + HashSet Solution finished in {}", duration(tick.elapsed()));
     Ok(())
 }

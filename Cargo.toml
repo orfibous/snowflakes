@@ -1,5 +1,6 @@
 [package]
 name = "snowflakes"
+default-run = "snowflakes"
 version = "0.1.0"
 edition = "2021"
 
