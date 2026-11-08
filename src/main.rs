@@ -92,7 +92,7 @@ fn basic_comparator(snowflake: &Snowflake, next_snowflake: &Snowflake) -> bool {
         for x in 0..6 {
             for y in 0..6 {
                 if left[x] == right[y] {
-                    for z in 1..5 {
+                    for z in 1..6 {
                         if left[(x + z) % 6] != right[(y + z) % 6] {
                             flag = false;
                             break;
@@ -139,7 +139,7 @@ fn report(flag: bool) {
     );
 }
 
-fn pairwise_search(snowflakes: &Vec<Snowflake>, comparator: Comparator, tick: Instant, stop_on_twin: bool) -> bool {
+fn pairwise_search(snowflakes: &[Snowflake], comparator: Comparator, tick: Instant, stop_on_twin: bool) -> bool {
     let mut flag = false;
     let total = snowflakes.len();
     let progress_interval = (total / 10).max(1);
@@ -166,11 +166,11 @@ fn pairwise_search(snowflakes: &Vec<Snowflake>, comparator: Comparator, tick: In
     flag
 }
 
-fn find_duplicate_snowflakes(snowflakes: &Vec<Snowflake>, comparator: Comparator, tick: Instant) -> bool {
+fn find_duplicate_snowflakes(snowflakes: &[Snowflake], comparator: Comparator, tick: Instant) -> bool {
     pairwise_search(snowflakes, comparator, tick, false)
 }
 
-fn better_find_duplicate_snowflakes(snowflakes: &Vec<Snowflake>, comparator: Comparator, tick: Instant) -> bool {
+fn better_find_duplicate_snowflakes(snowflakes: &[Snowflake], comparator: Comparator, tick: Instant) -> bool {
     pairwise_search(snowflakes, comparator, tick, true)
 }
 
@@ -190,7 +190,7 @@ fn product(snowflake: &Snowflake) -> [u32; 5] {
 }
 
 fn hashmap_search(
-    snowflakes: &Vec<Snowflake>,
+    snowflakes: &[Snowflake],
     comparator: Comparator,
     tick: Instant,
     with_product: bool,
@@ -229,7 +229,7 @@ fn hashmap_search(
 }
 
 fn sum_hashmap_find_duplicate_snowflakes(
-    snowflakes: &Vec<Snowflake>,
+    snowflakes: &[Snowflake],
     comparator: Comparator,
     tick: Instant,
 ) -> bool {
@@ -237,7 +237,7 @@ fn sum_hashmap_find_duplicate_snowflakes(
 }
 
 fn sum_product_hashmap_find_duplicate_snowflakes(
-    snowflakes: &Vec<Snowflake>,
+    snowflakes: &[Snowflake],
     comparator: Comparator,
     tick: Instant,
 ) -> bool {
