@@ -66,9 +66,6 @@ fn read_dataset() -> io::Result<Vec<Snowflake>> {
         .trim()
         .parse()
         .map_err(|_| invalid("Invalid count"))?;
-    if count == 0 || count > 100000 {
-        return Err(invalid("Count outside problem bounds"));
-    }
     let mut ds = Vec::with_capacity(count);
     for _ in 0..count {
         let line = lines.next().ok_or_else(|| invalid("Missing snowflake"))??;
