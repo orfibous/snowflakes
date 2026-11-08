@@ -139,14 +139,16 @@ fn report(flag: bool) {
     );
 }
 
-fn pairwise_search(snowflakes: &Vec<Snowflake>, comparator: Comparator, tick: Instant, stop_on_twin: bool) -> io::Result<bool> {
+fn pairwise_search(snowflakes: &Vec<Snowflake>, comparator: Comparator, tick: Instant, stop_on_twin: bool) -> bool {
     let mut flag = false;
-    for i in 0..snowflakes.len().saturating_sub(1) {
-        if i != 0 && (i * 10) % NUMBER_OF_SNOWFLAKES == 0 {
+    let total = snowflakes.len();
+    let progress_interval = (total / 10).max(1);
+    for i in 0..total.saturating_sub(1) {
+        if i != 0 && i % progress_interval == 0 {
             println!(
                 "processed {}/{} in {}",
                 i,
-                NUMBER_OF_SNOWFLAKES,
+                total,
                 duration(tick.elapsed())
             );
         }
@@ -155,20 +157,20 @@ fn pairwise_search(snowflakes: &Vec<Snowflake>, comparator: Comparator, tick: In
                 flag = true;
                 if stop_on_twin {
                     report(true);
-                    return Ok(true);
+                    return true;
                 }
             }
         }
     }
     report(flag);
-    Ok(flag)
+    flag
 }
 
-fn find_duplicate_snowflakes(snowflakes: &Vec<Snowflake>, comparator: Comparator, tick: Instant) -> io::Result<bool> {
+fn find_duplicate_snowflakes(snowflakes: &Vec<Snowflake>, comparator: Comparator, tick: Instant) -> bool {
     pairwise_search(snowflakes, comparator, tick, false)
 }
 
-fn better_find_duplicate_snowflakes(snowflakes: &Vec<Snowflake>, comparator: Comparator, tick: Instant) -> io::Result<bool> {
+fn better_find_duplicate_snowflakes(snowflakes: &Vec<Snowflake>, comparator: Comparator, tick: Instant) -> bool {
     pairwise_search(snowflakes, comparator, tick, true)
 }
 
@@ -192,7 +194,7 @@ fn hashmap_search(
     comparator: Comparator,
     tick: Instant,
     with_product: bool,
-) -> io::Result<bool> {
+) -> bool {
     let mut groups: HashMap<(u64, [u32; 5]), Vec<Snowflake>> = HashMap::new();
     for snowflake in snowflakes {
         let key = (
@@ -215,7 +217,7 @@ fn hashmap_search(
                 for j in i + 1..group.len() {
                     if comparator(&group[i], &group[j]) {
                         report(true);
-                        return Ok(true);
+                        return true;
                     }
                 }
             }
@@ -223,14 +225,14 @@ fn hashmap_search(
         }
     }
     report(false);
-    Ok(false)
+    false
 }
 
 fn sum_hashmap_find_duplicate_snowflakes(
     snowflakes: &Vec<Snowflake>,
     comparator: Comparator,
     tick: Instant,
-) -> io::Result<bool> {
+) -> bool {
     hashmap_search(snowflakes, comparator, tick, false)
 }
 
@@ -238,7 +240,7 @@ fn sum_product_hashmap_find_duplicate_snowflakes(
     snowflakes: &Vec<Snowflake>,
     comparator: Comparator,
     tick: Instant,
-) -> io::Result<bool> {
+) -> bool {
     hashmap_search(snowflakes, comparator, tick, true)
 }
 
@@ -288,7 +290,7 @@ fn main() -> io::Result<()> {
     println!("Basic Solution: all rotations");
     println!("We won't run this as it is slow");
     //     let tick = Instant::now();
-    //     find_duplicate_snowflakes(snowflakes_ref, basic_comparator, tick)?;
+    //     find_duplicate_snowflakes(snowflakes_ref, basic_comparator, tick);
     //     println!("Basic Solution finished in {}", duration(tick.elapsed()));
     // ## A Better Algorithm
     // The Comparator function can be further improved, but we will keep it for now and try to improve on the algorithm. The current algorithm starts by choosing the first snowflake and comparing it with all the rest. Then it chooses the second snowflake and compares it with all the other snowflakes except the first, and so on.
@@ -297,24 +299,24 @@ fn main() -> io::Result<()> {
     println!("Basic Solution: all rotations, stop on first twins found");
     println!("We also won't run this either");
     //     let tick = Instant::now();
-    //     better_find_duplicate_snowflakes(snowflakes_ref, basic_comparator, tick)?;
+    //     better_find_duplicate_snowflakes(snowflakes_ref, basic_comparator, tick);
     //     println!("Basic Solution finished in {}", duration(tick.elapsed()));
     // ## A Better Comparison
     // The simple solution may work, but it is too slow. In order to make it faster we can use a number of different tricks. One of them is to reverse the question. What if instead of searching for twin snowflakes we immediately stop processing two snowflakes when they are not twins. One easy way to do that is by checking if they contain the same elements (without caring about the order).
     println!("Better Comparator Solution: Do rotations only when snowflakes contain the same elements  (reversed criteria)");
     println!("We also won't run this also, since each Basic Run takes about 2 minutes and 30 seconds");
     //     let tick = Instant::now();
-    //     better_find_duplicate_snowflakes(snowflakes_ref, better_comparator, tick)?;
+    //     better_find_duplicate_snowflakes(snowflakes_ref, better_comparator, tick);
     //     println!("Better Solution finished in {}", duration(tick.elapsed()));
     // An even faster comparison would be to use the sum of arm lengths of each snowflake. Comparing one number is faster than comparing the whole set of elements. If 2 sets have the same sum, we then compare the set and if the set has the same numbers we then do all the rotations for given snowflakes.
     println!("Sum Comparator Solution: Do rotations only when sum of arm lengths is equal (reversed criteria)");
     let tick = Instant::now();
-    better_find_duplicate_snowflakes(snowflakes_ref, sum_comparator, tick)?;
+    better_find_duplicate_snowflakes(snowflakes_ref, sum_comparator, tick);
     println!("Sum Comparator finished in {}", duration(tick.elapsed()));
     // Another, idea would be to use a Sum HashMap. Instead of storing our snowflakes on a list, we will create a HashMap of vectors. Each vector will contain all snowflakes with the same sum of arm lengths. The sums will represent the keys of the HashMap. When our HashMap is complete, we will run our ```better_comparator``` only for the snowflakes in groups with equal sum. Instead of looping through the whole dataset we loop only through small groups.
     println!("Sum Hashmap Solution: Comparison only for snowflakes with same sum");
     let tick = Instant::now();
-    sum_hashmap_find_duplicate_snowflakes(snowflakes_ref, better_comparator, tick)?;
+    sum_hashmap_find_duplicate_snowflakes(snowflakes_ref, better_comparator, tick);
     println!("Sum Hashmap Solution finished in {}", duration(tick.elapsed()));
     // ## Sum + Product HashMap
     //
@@ -325,7 +327,7 @@ fn main() -> io::Result<()> {
     // For six arms, creating the groups takes O(n) expected time and O(n) space. Searching the groups is close to linear when groups remain small, but can still take O(n²) time in the worst case. A zero arm makes the product zero, which reduces the benefit of the additional key.
     println!("Sum + Product Hashmap Solution: Comparison only for snowflakes with same sum and product");
     let tick = Instant::now();
-    sum_product_hashmap_find_duplicate_snowflakes(snowflakes_ref, better_comparator, tick)?;
+    sum_product_hashmap_find_duplicate_snowflakes(snowflakes_ref, better_comparator, tick);
     println!("Sum + Product Hashmap Solution finished in {}", duration(tick.elapsed()));
     Ok(())
 }
